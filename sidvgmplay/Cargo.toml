@@ -1,0 +1,17 @@
+[package]
+name = "sidvgmplay"
+version = "0.1.0"
+edition = "2024"
+authors = ["Gautier Portet <kassoulet@gmail.com>"]
+description = "Render VGM/VGZ files containing SID music to WAV"
+license = "MIT"
+repository = "https://github.com/kassoulet/sid2vgm"
+readme = "../README.md"
+
+[dependencies]
+sidlite-sys = "0.1"
+hound = "3.5"
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0"
+byteorder = "1.5"
+flate2 = "1.0"
