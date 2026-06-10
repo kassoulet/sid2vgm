@@ -7,7 +7,7 @@ fn test_conversion_andropolis() {
     let mut cmd = Command::new("cargo");
     cmd.arg("run")
         .arg("--")
-        .arg("Andropolis.sid")
+        .arg("tests/sids/Andropolis.sid")
         .arg("-o")
         .arg("tests/output.vgm")
         .arg("-d")
@@ -41,7 +41,7 @@ fn test_vgz_conversion() {
     let mut cmd = Command::new("cargo");
     cmd.arg("run")
         .arg("--")
-        .arg("Andropolis.sid")
+        .arg("tests/sids/Andropolis.sid")
         .arg("-o")
         .arg("tests/output.vgz")
         .arg("-d")

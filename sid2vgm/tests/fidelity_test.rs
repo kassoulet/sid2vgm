@@ -10,7 +10,7 @@ use std::process::Command;
 
 #[test]
 fn test_audio_fidelity() {
-    let sid_path = "Andropolis.sid";
+    let sid_path = "tests/sids/Andropolis.sid";
     let vgm_path = "tests/fidelity.vgm";
     let sid_wav_path = "tests/sid_ref.wav";
     let vgm_wav_path = "tests/vgm_render.wav";
