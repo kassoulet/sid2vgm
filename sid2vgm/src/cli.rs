@@ -15,9 +15,9 @@ pub struct Args {
     #[arg(short, long, default_value_t = 0)]
     pub subtune: u16,
 
-    /// Duration in seconds to capture
-    #[arg(short, long, default_value_t = 60)]
-    pub duration: u32,
+    /// Duration in seconds to capture (default: from Songlengths.txt lookup)
+    #[arg(short, long)]
+    pub duration: Option<u32>,
 
     /// Force PAL timing
     #[arg(long)]

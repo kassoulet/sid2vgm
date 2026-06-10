@@ -1,10 +1,11 @@
 mod cli;
 mod convert;
 mod sid;
+mod songlengths;
 mod trace;
 mod vgm;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 fn main() -> Result<()> {
     let args = cli::parse_args();
@@ -15,6 +16,26 @@ fn main() -> Result<()> {
         out.set_extension("vgm");
         out
     });
+
+    let duration_secs = match args.duration {
+        Some(d) => d,
+        None => {
+            let input_dir = input.parent().unwrap_or(std::path::Path::new("."));
+            let sl_path = songlengths::find_songlengths(input_dir)
+                .with_context(|| format!(
+                    "No Songlengths.txt found searching from {}. Use --duration to set a duration.",
+                    input_dir.display()
+                ))?;
+            let sl = songlengths::SongLengths::load(&sl_path);
+            sl.duration_secs(&input, args.subtune).with_context(|| {
+                format!(
+                    "'{}' not found in {}. Use --duration to set a duration.",
+                    input.file_name().unwrap_or_default().to_string_lossy(),
+                    sl_path.display()
+                )
+            })?
+        }
+    };
 
     let mut converter = convert::Converter::new()?;
 
@@ -28,7 +49,7 @@ fn main() -> Result<()> {
             args.subtune.to_string()
         }
     );
-    println!("Duration:  {}s", args.duration);
+    println!("Duration:  {}s", duration_secs);
 
     let is_vgz = output.extension().is_some_and(|ext| ext == "vgz");
     let target_path = if is_vgz {
@@ -49,7 +70,7 @@ fn main() -> Result<()> {
         &input,
         &target_path,
         args.subtune,
-        args.duration,
+        duration_secs,
         args.loop_point,
         pal_override,
     )?;

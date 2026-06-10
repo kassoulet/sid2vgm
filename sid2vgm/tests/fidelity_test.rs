@@ -18,8 +18,7 @@ fn test_audio_fidelity() {
     let sl = songlengths::SongLengths::load("tests/sids/Songlengths.txt");
     let duration_secs = sl
         .duration_secs(std::path::Path::new(sid_path))
-        .unwrap_or(60)
-        .min(songlengths::MAX_TEST_SECS);
+        .unwrap_or(60);
 
     fs::create_dir_all("tests").ok();
 

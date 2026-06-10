@@ -7,7 +7,7 @@ pub struct SongLengths {
 }
 
 impl SongLengths {
-    pub fn load(path: &str) -> Self {
+    pub fn load(path: &Path) -> Self {
         let mut by_hash = HashMap::new();
         let mut by_name: HashMap<String, Vec<u32>> = HashMap::new();
 
@@ -19,11 +19,9 @@ impl SongLengths {
 
         for line in content.lines() {
             if line.starts_with(';') {
-                // "; /path/to/File.sid" — capture the basename
                 let path_part = line.trim_start_matches(';').trim();
                 current_name = path_part.split('/').last().map(str::to_string);
             } else if line.starts_with('[') || line.is_empty() {
-                // section header or blank — reset context
                 current_name = None;
             } else if let Some((hash, durations_str)) = line.split_once('=') {
                 let durations: Vec<u32> = durations_str
@@ -42,20 +40,39 @@ impl SongLengths {
         Self { by_hash, by_name }
     }
 
-    /// Return the duration (seconds) for the default subtune of the given SID file.
-    /// Looks up by MD5 hash first, then by filename.
-    /// Returns `None` if not found in the database.
-    pub fn duration_secs(&self, sid_path: &Path) -> Option<u32> {
-        // Hash lookup
+    /// Duration in seconds for the given subtune (1-based; 0 means default/first).
+    pub fn duration_secs(&self, sid_path: &Path, subtune: u16) -> Option<u32> {
+        let idx = if subtune == 0 { 0 } else { (subtune - 1) as usize };
+
         if let Ok(data) = std::fs::read(sid_path) {
             let hash = format!("{:x}", md5::compute(&data));
-            if let Some(d) = self.by_hash.get(&hash).and_then(|v| v.first()) {
+            if let Some(d) = self.by_hash.get(&hash).and_then(|v| v.get(idx).or(v.first())) {
                 return Some(*d);
             }
         }
-        // Filename fallback
         let name = sid_path.file_name()?.to_str()?;
-        self.by_name.get(name)?.first().copied()
+        self.by_name
+            .get(name)?
+            .get(idx)
+            .or_else(|| self.by_name.get(name)?.first())
+            .copied()
+    }
+}
+
+/// Search for Songlengths.txt by walking up from `start_dir`.
+/// Checks both `<dir>/Songlengths.txt` and `<dir>/DOCUMENTS/Songlengths.txt`.
+pub fn find_songlengths(start_dir: &Path) -> Option<std::path::PathBuf> {
+    let mut dir = start_dir;
+    loop {
+        let candidate = dir.join("Songlengths.txt");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        let candidate = dir.join("DOCUMENTS").join("Songlengths.txt");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        dir = dir.parent()?;
     }
 }
 

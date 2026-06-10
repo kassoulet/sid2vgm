@@ -33,10 +33,7 @@ fn test_batch_fidelity() {
             let vgm_wav_path = format!("{}/{}.wav", vgm_wavs_dir, file_name);
             let sid_wav_path = format!("{}/{}.wav", wavs_dir, file_name);
 
-            let duration_secs = sl
-                .duration_secs(&path)
-                .unwrap_or(60)
-                .min(songlengths::MAX_TEST_SECS);
+            let duration_secs = sl.duration_secs(&path).unwrap_or(60);
 
             // 1. Render reference SID to WAV using sidplayfp
             let status = Command::new("sidplayfp")
