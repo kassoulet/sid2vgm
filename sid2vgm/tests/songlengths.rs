@@ -42,21 +42,33 @@ impl SongLengths {
         Self { by_hash, by_name }
     }
 
-    /// Return the duration (seconds) for the default subtune of the given SID file.
-    /// Looks up by MD5 hash first, then by filename.
+    /// Return the duration (seconds) for the default subtune of the given SID file
+    /// (the `startSong` from its header). Looks up by MD5 hash first, then by filename.
     /// Returns `None` if not found in the database.
     pub fn duration_secs(&self, sid_path: &Path) -> Option<u32> {
+        let data = std::fs::read(sid_path).ok();
+        let idx = data.as_deref().map_or(0, start_song_index);
+
         // Hash lookup
-        if let Ok(data) = std::fs::read(sid_path) {
-            let hash = format!("{:x}", md5::compute(&data));
-            if let Some(d) = self.by_hash.get(&hash).and_then(|v| v.first()) {
-                return Some(*d);
+        if let Some(data) = &data {
+            let hash = format!("{:x}", md5::compute(data));
+            if let Some(v) = self.by_hash.get(&hash) {
+                return v.get(idx).or_else(|| v.first()).copied();
             }
         }
         // Filename fallback
         let name = sid_path.file_name()?.to_str()?;
-        self.by_name.get(name)?.first().copied()
+        let durations = self.by_name.get(name)?;
+        durations.get(idx).or_else(|| durations.first()).copied()
     }
+}
+
+/// 0-based index of the default start song (`startSong` field at 0x10).
+fn start_song_index(data: &[u8]) -> usize {
+    if data.len() < 0x12 || (&data[0..4] != b"PSID" && &data[0..4] != b"RSID") {
+        return 0;
+    }
+    (u16::from_be_bytes([data[0x10], data[0x11]]).max(1) - 1) as usize
 }
 
 fn parse_duration(s: &str) -> Option<u32> {

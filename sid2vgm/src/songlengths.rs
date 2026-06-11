@@ -40,30 +40,27 @@ impl SongLengths {
         Self { by_hash, by_name }
     }
 
-    /// Duration in seconds for the given subtune (1-based; 0 means default/first).
+    /// Duration in seconds for the given subtune (1-based; 0 means the SID's
+    /// default start song from its header).
     pub fn duration_secs(&self, sid_path: &Path, subtune: u16) -> Option<u32> {
-        let idx = if subtune == 0 {
-            0
+        let data = std::fs::read(sid_path).ok();
+        let subtune = if subtune == 0 {
+            data.as_deref()
+                .map_or(1, crate::sid::loader::read_start_song)
         } else {
-            (subtune - 1) as usize
+            subtune
         };
+        let idx = (subtune - 1) as usize;
 
-        if let Ok(data) = std::fs::read(sid_path) {
-            let hash = format!("{:x}", md5::compute(&data));
-            if let Some(d) = self
-                .by_hash
-                .get(&hash)
-                .and_then(|v| v.get(idx).or(v.first()))
-            {
-                return Some(*d);
+        if let Some(data) = &data {
+            let hash = format!("{:x}", md5::compute(data));
+            if let Some(v) = self.by_hash.get(&hash) {
+                return v.get(idx).or_else(|| v.first()).copied();
             }
         }
         let name = sid_path.file_name()?.to_str()?;
-        self.by_name
-            .get(name)?
-            .get(idx)
-            .or_else(|| self.by_name.get(name)?.first())
-            .copied()
+        let durations = self.by_name.get(name)?;
+        durations.get(idx).or_else(|| durations.first()).copied()
     }
 }
 

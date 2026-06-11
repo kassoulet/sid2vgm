@@ -1,6 +1,15 @@
 use crate::sid::SidModel;
 use std::path::Path;
 
+/// Default start song (1-based `startSong` field at 0x10) from PSID/RSID
+/// header bytes. Returns 1 when the header is absent or malformed.
+pub fn read_start_song(data: &[u8]) -> u16 {
+    if data.len() < 0x12 || (&data[0..4] != b"PSID" && &data[0..4] != b"RSID") {
+        return 1;
+    }
+    u16::from_be_bytes([data[0x10], data[0x11]]).max(1)
+}
+
 /// Extract SID chip model from a PSID/RSID file header.
 /// Defaults to MOS6581 for v1 files or when the flags are ambiguous.
 pub fn read_sid_model(path: &Path) -> SidModel {
