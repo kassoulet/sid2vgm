@@ -67,20 +67,33 @@ fn main() -> Result<()> {
         _ => None,
     };
 
-    let stats = converter.convert(
+    let result = converter.convert(
         &input,
         &target_path,
         args.subtune,
         duration_secs,
         args.loop_point,
         pal_override,
-    )?;
+    );
+    // Always remove the intermediate .vgm.tmp, even when conversion or
+    // compression fails partway.
+    let stats = match result {
+        Ok(stats) => stats,
+        Err(e) => {
+            if is_vgz {
+                let _ = std::fs::remove_file(&target_path);
+            }
+            return Err(e);
+        }
+    };
 
     if is_vgz {
         println!("Compressing to .vgz...");
-        let vgm_data = std::fs::read(&target_path)?;
-        vgm::compression::compress_vgm(&vgm_data, &output)?;
-        std::fs::remove_file(&target_path)?;
+        let compressed = std::fs::read(&target_path)
+            .map_err(anyhow::Error::from)
+            .and_then(|data| Ok(vgm::compression::compress_vgm(&data, &output)?));
+        let _ = std::fs::remove_file(&target_path);
+        compressed?;
     }
 
     if args.stats {
