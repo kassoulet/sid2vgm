@@ -31,10 +31,15 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
 
     reader.set_position(0x7C);
     let model_byte = reader.read_u8().context("read sid_model")?;
-    let chip_model = if model_byte & 1 == 1 {
-        ChipModel::Mos8580
-    } else {
-        ChipModel::Mos6581
+    let make_sid = || {
+        let chip_model = if model_byte & 1 == 1 {
+            ChipModel::Mos8580
+        } else {
+            ChipModel::Mos6581
+        };
+        let mut sid = Sid::new(chip_model);
+        sid.set_sampling_parameters(sid_clock, 44100);
+        sid
     };
 
     let total_samples = match duration_limit {
@@ -52,10 +57,10 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
     };
     let mut wav = WavWriter::create(output, spec).context("Failed to create WAV file")?;
 
-    let mut sid = Sid::new(chip_model);
-    sid.set_sampling_parameters(sid_clock, 44100);
+    let mut chips = vec![make_sid()];
 
     let mut written: u32 = 0;
+    let mut mix = [0i16; 4096];
     let mut buf = [0i16; 4096];
 
     loop {
@@ -68,50 +73,57 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
         };
         match cmd {
             0xB6 => {
-                let _chip = reader.read_u8()?;
+                let chip = reader.read_u8()? as usize;
                 let reg = reader.read_u8()?;
                 let val = reader.read_u8()?;
                 // SID has 32 registers (0x00-0x1F)
                 if reg <= 0x1F {
-                    sid.write(reg, val);
+                    while chips.len() <= chip {
+                        chips.push(make_sid());
+                    }
+                    chips[chip].write(reg, val);
                 }
             }
             0x61 => {
                 let n = reader.read_u16::<LittleEndian>()? as u32;
-                clock_sid(
-                    &mut sid,
+                clock_chips(
+                    &mut chips,
                     n.min(total_samples - written),
                     sid_clock,
                     &mut wav,
                     &mut written,
+                    &mut mix,
                     &mut buf,
                 )?;
             }
-            0x62 => clock_sid(
-                &mut sid,
+            0x62 => clock_chips(
+                &mut chips,
                 735u32.min(total_samples - written),
                 sid_clock,
                 &mut wav,
                 &mut written,
+                &mut mix,
                 &mut buf,
             )?,
-            0x63 => clock_sid(
-                &mut sid,
+            0x63 => clock_chips(
+                &mut chips,
                 882u32.min(total_samples - written),
                 sid_clock,
                 &mut wav,
                 &mut written,
+                &mut mix,
                 &mut buf,
             )?,
             0x66 => break,
             0x70..=0x7F => {
                 let n = (cmd & 0x0F) as u32 + 1;
-                clock_sid(
-                    &mut sid,
+                clock_chips(
+                    &mut chips,
                     n.min(total_samples - written),
                     sid_clock,
                     &mut wav,
                     &mut written,
+                    &mut mix,
                     &mut buf,
                 )?;
             }
@@ -123,20 +135,28 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
     Ok(())
 }
 
-fn clock_sid<W: Write + Seek>(
-    sid: &mut Sid,
+fn clock_chips<W: Write + Seek>(
+    chips: &mut [Sid],
     samples: u32,
     sid_clock: u32,
     wav: &mut WavWriter<W>,
     total: &mut u32,
+    mix: &mut [i16],
     buf: &mut [i16],
 ) -> Result<()> {
     let mut remaining = samples;
     while remaining > 0 {
-        let chunk = remaining.min(buf.len() as u32) as usize;
+        let chunk = remaining.min(mix.len() as u32) as usize;
         let cycles = (chunk as u64 * sid_clock as u64 / 44100) as u32;
-        let n = sid.clock(cycles, buf).min(buf.len());
-        for (i, &s) in buf[..n].iter().enumerate() {
+        let mut n = chips[0].clock(cycles, mix).min(mix.len());
+        for sid in &mut chips[1..] {
+            let m = sid.clock(cycles, buf).min(buf.len()).min(n);
+            for j in 0..m {
+                mix[j] = mix[j].saturating_add(buf[j]);
+            }
+            n = m;
+        }
+        for (i, &s) in mix[..n].iter().enumerate() {
             let pos = *total + i as u32;
             let sample = if pos < FADE_IN_SAMPLES {
                 (s as i32 * pos as i32 / FADE_IN_SAMPLES as i32) as i16
