@@ -42,11 +42,19 @@ impl SongLengths {
 
     /// Duration in seconds for the given subtune (1-based; 0 means default/first).
     pub fn duration_secs(&self, sid_path: &Path, subtune: u16) -> Option<u32> {
-        let idx = if subtune == 0 { 0 } else { (subtune - 1) as usize };
+        let idx = if subtune == 0 {
+            0
+        } else {
+            (subtune - 1) as usize
+        };
 
         if let Ok(data) = std::fs::read(sid_path) {
             let hash = format!("{:x}", md5::compute(&data));
-            if let Some(d) = self.by_hash.get(&hash).and_then(|v| v.get(idx).or(v.first())) {
+            if let Some(d) = self
+                .by_hash
+                .get(&hash)
+                .and_then(|v| v.get(idx).or(v.first()))
+            {
                 return Some(*d);
             }
         }

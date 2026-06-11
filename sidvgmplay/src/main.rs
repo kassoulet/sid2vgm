@@ -26,7 +26,9 @@ fn main() -> Result<()> {
     let vgm_data = if args.input.extension().is_some_and(|e| e == "vgz") || is_gzip(&raw) {
         let mut decoder = GzDecoder::new(raw.as_slice());
         let mut buf = Vec::new();
-        decoder.read_to_end(&mut buf).context("Failed to decompress VGZ")?;
+        decoder
+            .read_to_end(&mut buf)
+            .context("Failed to decompress VGZ")?;
         buf
     } else {
         raw

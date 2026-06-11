@@ -21,11 +21,12 @@ fn main() -> Result<()> {
         Some(d) => d,
         None => {
             let input_dir = input.parent().unwrap_or(std::path::Path::new("."));
-            let sl_path = songlengths::find_songlengths(input_dir)
-                .with_context(|| format!(
+            let sl_path = songlengths::find_songlengths(input_dir).with_context(|| {
+                format!(
                     "No Songlengths.txt found searching from {}. Use --duration to set a duration.",
                     input_dir.display()
-                ))?;
+                )
+            })?;
             let sl = songlengths::SongLengths::load(&sl_path);
             sl.duration_secs(&input, args.subtune).with_context(|| {
                 format!(

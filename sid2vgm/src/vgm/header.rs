@@ -30,37 +30,38 @@ impl VgmHeader {
     }
 
     pub fn write<W: Write>(&self, mut writer: W) -> Result<()> {
-        writer.write_all(b"Vgm ")?;                                    // 0x00
-        writer.write_u32::<LittleEndian>(self.eof_offset)?;            // 0x04 — back-patched
-        writer.write_u32::<LittleEndian>(self.version)?;               // 0x08
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x0C SN76489 clock
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x10 YM2413 clock
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x14 GD3 offset
-        writer.write_u32::<LittleEndian>(self.total_samples)?;         // 0x18
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x1C loop offset
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x20 loop samples
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x24 rate
-        writer.write_u16::<LittleEndian>(0)?;                          // 0x28 SN76489 feedback
-        writer.write_u8(0)?;                                            // 0x2A SN76489 shift
-        writer.write_u8(0)?;                                            // 0x2B SN76489 flags
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x2C YM2612 clock
-        writer.write_u32::<LittleEndian>(0)?;                          // 0x30 YM2151 clock
-        writer.write_u32::<LittleEndian>(self.data_offset - 0x34)?;    // 0x34 data offset (relative)
+        writer.write_all(b"Vgm ")?; // 0x00
+        writer.write_u32::<LittleEndian>(self.eof_offset)?; // 0x04 — back-patched
+        writer.write_u32::<LittleEndian>(self.version)?; // 0x08
+        writer.write_u32::<LittleEndian>(0)?; // 0x0C SN76489 clock
+        writer.write_u32::<LittleEndian>(0)?; // 0x10 YM2413 clock
+        writer.write_u32::<LittleEndian>(0)?; // 0x14 GD3 offset
+        writer.write_u32::<LittleEndian>(self.total_samples)?; // 0x18
+        writer.write_u32::<LittleEndian>(0)?; // 0x1C loop offset
+        writer.write_u32::<LittleEndian>(0)?; // 0x20 loop samples
+        writer.write_u32::<LittleEndian>(0)?; // 0x24 rate
+        writer.write_u16::<LittleEndian>(0)?; // 0x28 SN76489 feedback
+        writer.write_u8(0)?; // 0x2A SN76489 shift
+        writer.write_u8(0)?; // 0x2B SN76489 flags
+        writer.write_u32::<LittleEndian>(0)?; // 0x2C YM2612 clock
+        writer.write_u32::<LittleEndian>(0)?; // 0x30 YM2151 clock
+        writer.write_u32::<LittleEndian>(self.data_offset - 0x34)?; // 0x34 data offset (relative)
 
         // Pad 0x38–0x77 with zeros (unused chip clocks)
         for _ in 0..(0x78 - 0x38) {
             writer.write_u8(0)?;
         }
 
-        writer.write_u32::<LittleEndian>(self.sid_clock)?;             // 0x78 SID clock
-        let model_byte: u8 = match self.sid_model {                    // 0x7C SID model
+        writer.write_u32::<LittleEndian>(self.sid_clock)?; // 0x78 SID clock
+        let model_byte: u8 = match self.sid_model {
+            // 0x7C SID model
             SidModel::MOS6581 => 0,
             SidModel::MOS8580 => 1,
         };
         writer.write_u8(model_byte)?;
-        writer.write_u8(0)?;                                            // 0x7D reserved
-        writer.write_u8(0)?;                                            // 0x7E reserved
-        writer.write_u8(0)?;                                            // 0x7F reserved
+        writer.write_u8(0)?; // 0x7D reserved
+        writer.write_u8(0)?; // 0x7E reserved
+        writer.write_u8(0)?; // 0x7F reserved
 
         Ok(())
     }

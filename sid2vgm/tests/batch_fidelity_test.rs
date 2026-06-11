@@ -113,21 +113,56 @@ fn render_vgm_to_wav(vgm_path: &str, wav_path: &str, duration_secs: u32) {
             }
             0x61 => {
                 let samples = reader.read_u16::<LittleEndian>().unwrap() as u32;
-                clock_sid(&mut sid, samples, sid_clock, &mut writer, &mut total_samples, &mut sample_buf);
+                clock_sid(
+                    &mut sid,
+                    samples,
+                    sid_clock,
+                    &mut writer,
+                    &mut total_samples,
+                    &mut sample_buf,
+                );
             }
-            0x62 => clock_sid(&mut sid, 735, sid_clock, &mut writer, &mut total_samples, &mut sample_buf),
-            0x63 => clock_sid(&mut sid, 882, sid_clock, &mut writer, &mut total_samples, &mut sample_buf),
+            0x62 => clock_sid(
+                &mut sid,
+                735,
+                sid_clock,
+                &mut writer,
+                &mut total_samples,
+                &mut sample_buf,
+            ),
+            0x63 => clock_sid(
+                &mut sid,
+                882,
+                sid_clock,
+                &mut writer,
+                &mut total_samples,
+                &mut sample_buf,
+            ),
             0x66 => break,
             0x70..=0x7F => {
                 let samples = (cmd & 0x0F) as u32 + 1;
-                clock_sid(&mut sid, samples, sid_clock, &mut writer, &mut total_samples, &mut sample_buf);
+                clock_sid(
+                    &mut sid,
+                    samples,
+                    sid_clock,
+                    &mut writer,
+                    &mut total_samples,
+                    &mut sample_buf,
+                );
             }
             _ => {}
         }
     }
 
     if total_samples < target_samples {
-        clock_sid(&mut sid, target_samples - total_samples, sid_clock, &mut writer, &mut total_samples, &mut sample_buf);
+        clock_sid(
+            &mut sid,
+            target_samples - total_samples,
+            sid_clock,
+            &mut writer,
+            &mut total_samples,
+            &mut sample_buf,
+        );
     }
 
     writer.finalize().unwrap();

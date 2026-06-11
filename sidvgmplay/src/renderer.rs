@@ -13,15 +13,21 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
 
     // VGM header fields
     reader.set_position(0x18);
-    let total_samples = reader.read_u32::<LittleEndian>().context("read total_samples")?;
+    let total_samples = reader
+        .read_u32::<LittleEndian>()
+        .context("read total_samples")?;
 
     // Data offset at 0x34 is relative to position 0x34
     reader.set_position(0x34);
-    let data_rel = reader.read_u32::<LittleEndian>().context("read data_offset")?;
+    let data_rel = reader
+        .read_u32::<LittleEndian>()
+        .context("read data_offset")?;
     let data_start = 0x34u64 + data_rel as u64;
 
     reader.set_position(0x78);
-    let sid_clock = reader.read_u32::<LittleEndian>().context("read sid_clock")?;
+    let sid_clock = reader
+        .read_u32::<LittleEndian>()
+        .context("read sid_clock")?;
 
     reader.set_position(0x7C);
     let model_byte = reader.read_u8().context("read sid_model")?;
@@ -72,14 +78,42 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
             }
             0x61 => {
                 let n = reader.read_u16::<LittleEndian>()? as u32;
-                clock_sid(&mut sid, n.min(total_samples - written), sid_clock, &mut wav, &mut written, &mut buf)?;
+                clock_sid(
+                    &mut sid,
+                    n.min(total_samples - written),
+                    sid_clock,
+                    &mut wav,
+                    &mut written,
+                    &mut buf,
+                )?;
             }
-            0x62 => clock_sid(&mut sid, 735u32.min(total_samples - written), sid_clock, &mut wav, &mut written, &mut buf)?,
-            0x63 => clock_sid(&mut sid, 882u32.min(total_samples - written), sid_clock, &mut wav, &mut written, &mut buf)?,
+            0x62 => clock_sid(
+                &mut sid,
+                735u32.min(total_samples - written),
+                sid_clock,
+                &mut wav,
+                &mut written,
+                &mut buf,
+            )?,
+            0x63 => clock_sid(
+                &mut sid,
+                882u32.min(total_samples - written),
+                sid_clock,
+                &mut wav,
+                &mut written,
+                &mut buf,
+            )?,
             0x66 => break,
             0x70..=0x7F => {
                 let n = (cmd & 0x0F) as u32 + 1;
-                clock_sid(&mut sid, n.min(total_samples - written), sid_clock, &mut wav, &mut written, &mut buf)?;
+                clock_sid(
+                    &mut sid,
+                    n.min(total_samples - written),
+                    sid_clock,
+                    &mut wav,
+                    &mut written,
+                    &mut buf,
+                )?;
             }
             _ => {}
         }
