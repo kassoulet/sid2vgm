@@ -65,7 +65,10 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
                 let _chip = reader.read_u8()?;
                 let reg = reader.read_u8()?;
                 let val = reader.read_u8()?;
-                sid.write(reg, val);
+                // SID has 32 registers (0x00-0x1F)
+                if reg <= 0x1F {
+                    sid.write(reg, val);
+                }
             }
             0x61 => {
                 let n = reader.read_u16::<LittleEndian>()? as u32;

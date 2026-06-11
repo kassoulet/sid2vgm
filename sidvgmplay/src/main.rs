@@ -1,5 +1,7 @@
 mod cli;
 mod renderer;
+#[cfg(test)]
+mod security_test;
 
 use anyhow::{Context, Result};
 use flate2::read::GzDecoder;
