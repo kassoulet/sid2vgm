@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::renderer::render;
-    use std::path::Path;
     use std::fs;
+    use std::path::Path;
 
     #[test]
     fn test_invalid_sid_register() {
@@ -51,6 +51,9 @@ mod tests {
             let _ = fs::remove_file(output_path);
         }
 
-        assert!(result.is_ok(), "Renderer should handle invalid register gracefully");
+        assert!(
+            result.is_ok(),
+            "Renderer should handle invalid register gracefully"
+        );
     }
 }
