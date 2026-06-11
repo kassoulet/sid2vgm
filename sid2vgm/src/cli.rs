@@ -20,7 +20,7 @@ pub struct Args {
     pub duration: Option<u32>,
 
     /// Force PAL timing
-    #[arg(long)]
+    #[arg(long, conflicts_with = "ntsc")]
     pub pal: bool,
 
     /// Force NTSC timing
