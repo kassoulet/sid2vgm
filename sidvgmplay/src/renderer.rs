@@ -131,6 +131,20 @@ pub fn render(vgm_data: &[u8], output: &Path, duration_limit: Option<u32>) -> Re
         }
     }
 
+    // The stream may end (0x66 or EOF) before the header's sample count is
+    // reached; keep clocking so the WAV always has the advertised duration.
+    if written < total_samples {
+        clock_chips(
+            &mut chips,
+            total_samples - written,
+            sid_clock,
+            &mut wav,
+            &mut written,
+            &mut mix,
+            &mut buf,
+        )?;
+    }
+
     wav.finalize().context("Failed to finalize WAV")?;
     Ok(())
 }
