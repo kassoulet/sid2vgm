@@ -88,6 +88,13 @@ impl Converter {
 
         let mut current_sample = 0;
         for (sample, cmd) in vgm_events {
+            if sample > current_sample {
+                vgm_writer.write_command(&VgmCommand::WaitSamples(sample - current_sample))?;
+                current_sample = sample;
+            }
+
+            // Capture the loop start after the bridging wait, so the byte offset
+            // and the sample count both refer to the same stream position.
             if let Some(tls) = target_loop_sample
                 && loop_byte_offset == 0
                 && sample >= tls
@@ -96,10 +103,6 @@ impl Converter {
                 loop_sample_count = final_sample - sample;
             }
 
-            if sample > current_sample {
-                vgm_writer.write_command(&VgmCommand::WaitSamples(sample - current_sample))?;
-                current_sample = sample;
-            }
             vgm_writer.write_command(&cmd)?;
         }
 
