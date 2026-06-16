@@ -1,11 +1,7 @@
-mod cli;
-mod renderer;
-#[cfg(test)]
-mod security_test;
-
 use anyhow::{Context, Result};
 use flate2::read::GzDecoder;
 use std::io::Read;
+use sidvgmplay::{cli, renderer, is_gzip};
 
 fn main() -> Result<()> {
     let args = cli::parse_args();
@@ -38,8 +34,4 @@ fn main() -> Result<()> {
 
     println!("Done.");
     Ok(())
-}
-
-fn is_gzip(data: &[u8]) -> bool {
-    data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b
 }
