@@ -23,10 +23,14 @@ The following fields are added to the VGM header to support the SID chip.
 ### 2.1 SID Clock (Offset 0x78)
 A value of 0 indicates the SID chip is not used. A non-zero value specifies the clock frequency. For multiple SIDs, they are assumed to share the same clock unless otherwise specified in future revisions.
 
+**Multi-SID note:** The header stores only the primary chip's clock. Additional chips are identified at the stream level via the chip index (`cc`) in the `0xB6` command. Secondary SIDs are not declared in the header — players that key off the header alone will miss them.
+
 ### 2.2 SID Model (Offset 0x7C)
 The SID model byte defines the chip characteristics:
 - `Bit 0`: Model Type (0 = MOS 6581, 1 = MOS 8580)
 - `Bits 1-7`: Reserved for specific revisions (e.g., 6581R2, 8580R5)
+
+**PSID "Both Models" mapping:** When converting from PSID/RSID headers, flag bits 4–5 indicate model compatibility. Only `0b10` maps to MOS 8580; everything else (including `0b11` "both models") maps to MOS 6581. This is a single-model default — players should handle either model correctly.
 
 ## 3. Data Commands
 

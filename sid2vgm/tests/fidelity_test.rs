@@ -18,7 +18,7 @@ fn test_audio_fidelity() {
     let sl = songlengths::SongLengths::load("tests/sids/Songlengths.txt");
     let duration_secs = sl
         .duration_secs(std::path::Path::new(sid_path))
-        .unwrap_or(60);
+        .expect("Songlengths.txt entry required for test — no fallback to 60s");
 
     fs::create_dir_all("tests").ok();
 

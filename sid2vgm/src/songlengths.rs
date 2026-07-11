@@ -20,7 +20,7 @@ impl SongLengths {
         for line in content.lines() {
             if line.starts_with(';') {
                 let path_part = line.trim_start_matches(';').trim();
-                current_name = path_part.split('/').last().map(str::to_string);
+                current_name = path_part.split('/').next_back().map(str::to_string);
             } else if line.starts_with('[') || line.is_empty() {
                 current_name = None;
             } else if let Some((hash, durations_str)) = line.split_once('=') {

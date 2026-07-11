@@ -24,7 +24,7 @@ This workspace contains two binaries:
 
 ## Building
 
-Requires Rust (2024 edition). No system libraries needed beyond what Cargo fetches.
+Requires Rust (2024 edition) and `libsidplayfp` development headers (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ```bash
 cargo build --release
@@ -41,8 +41,8 @@ sid2vgm <input.sid> [options]
 
 Options:
   -o, --output <file>       Output file (.vgm or .vgz). Default: input name with .vgm extension.
-  -s, --subtune <num>       Subtune number (default: 0 = title tune)
-  -d, --duration <secs>     Capture duration in seconds (default: 60)
+  -s, --subtune <num>       Subtune number (default: 0 = default start song from SID header)
+  -d, --duration <secs>     Capture duration in seconds (default: from Songlengths.txt lookup; errors if absent)
   --loop-point <secs>       Mark a loop point in the VGM stream
   --pal / --ntsc            Force PAL or NTSC clock (default: from SID header)
   --stats                   Print event count, duration, and file size
@@ -79,7 +79,7 @@ The output targets VGM v1.71 with the SID chip extension:
 - SID register writes use command `0xB6 <chip> <reg> <val>`
 - SID clock frequency at header offset `0x78`
 - SID chip model byte at header offset `0x7C` (`0` = MOS 6581, `1` = MOS 8580)
-- Wait commands: `0x62` (735 samples, PAL frame), `0x63` (882 samples, NTSC frame), `0x61 nn nn` (arbitrary), `0x7n` (1–16 samples)
+- Wait commands: `0x62` (735 samples, NTSC 1/60s frame), `0x63` (882 samples, PAL 1/50s frame), `0x61 nn nn` (arbitrary), `0x7n` (1–16 samples)
 
 See [VGM_SID_SPEC.md](VGM_SID_SPEC.md) for the full specification.
 
